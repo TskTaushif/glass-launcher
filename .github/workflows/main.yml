@@ -1,0 +1,37 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack project
+        run: unzip -q -o project.zip -d src
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build
+        working-directory: src
+        run: gradle assembleDebug --no-daemon --stacktrace
+      - name: Rename APK
+        run: cp src/app/build/outputs/apk/debug/app-debug.apk GlassLauncher.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GlassLauncher-apk
+          path: GlassLauncher.apk
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Glass Launcher build ${{ github.run_number }}
+          files: GlassLauncher.apk
+          
